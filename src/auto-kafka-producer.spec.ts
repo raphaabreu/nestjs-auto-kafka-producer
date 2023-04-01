@@ -46,7 +46,7 @@ describe('AutoKafkaProducer', () => {
     }).compile();
 
     sut = module.get<AutoKafkaProducer<any, any, any>>(AutoKafkaProducer);
-    kafka = module.get<jest.Mocked<Kafka>>(Kafka);
+    kafka = module.get<Kafka>(Kafka) as jest.Mocked<Kafka>;
     eventEmitter = module.get<EventEmitter2>(EventEmitter2);
   }
 
