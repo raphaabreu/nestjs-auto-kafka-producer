@@ -129,7 +129,7 @@ export class AutoKafkaProducer<TEvent, TValue, TKey> implements OnModuleInit, On
     try {
       await this.producer.send(params);
 
-      const verboseLog = this.options.verboseBeginning && this.verboseLogCount < MAX_VERBOSE_LOG_COUNT;
+      const verboseLog = this.verboseLoggingEnabled();
 
       this.logger[verboseLog ? 'log' : 'debug'](
         'Published ${batchMessages} messages to Kafka topic ${topicName}',
@@ -137,12 +137,7 @@ export class AutoKafkaProducer<TEvent, TValue, TKey> implements OnModuleInit, On
         this.options.topicName,
       );
 
-      if (verboseLog) {
-        this.verboseLogCount++;
-        if (this.verboseLogCount === MAX_VERBOSE_LOG_COUNT) {
-          this.logger.log('Success messages will be logged as debug from now on');
-        }
-      }
+      this.countVerboseLogging();
     } catch (error) {
       this.logger.error('Failed to publish messages to Kafka topic ${topicName}', error, this.options.topicName);
     }
@@ -168,11 +163,23 @@ export class AutoKafkaProducer<TEvent, TValue, TKey> implements OnModuleInit, On
 
   @OnEvent('flush')
   async flush() {
-    const verboseLog = this.options.verboseBeginning && this.verboseLogCount < MAX_VERBOSE_LOG_COUNT;
-
     this.batcher.flush();
     await this.promiseCollector.pending();
 
-    this.logger[verboseLog ? 'log' : 'debug']('Flushed');
+    this.logger[this.verboseLoggingEnabled() ? 'log' : 'debug']('Flushed');
+    this.countVerboseLogging();
+  }
+
+  private verboseLoggingEnabled() {
+    return this.options.verboseBeginning && this.verboseLogCount < MAX_VERBOSE_LOG_COUNT;
+  }
+
+  private countVerboseLogging() {
+    if (this.verboseLoggingEnabled()) {
+      this.verboseLogCount++;
+      if (this.verboseLogCount === MAX_VERBOSE_LOG_COUNT) {
+        this.logger.log('Success messages will be logged as debug from now on');
+      }
+    }
   }
 }
