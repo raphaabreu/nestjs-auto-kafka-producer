@@ -120,12 +120,6 @@ export class AutoKafkaProducer<TEvent, TValue, TKey> implements OnModuleInit, On
       compression: this.options.compression,
     };
 
-    this.logger.debug(
-      'Publishing ${messageCount} messages to Kafka topic ${topicName}...',
-      events.length,
-      this.options.topicName,
-    );
-
     try {
       await this.producer.send(params);
 
