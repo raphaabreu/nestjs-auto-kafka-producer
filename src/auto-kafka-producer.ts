@@ -131,21 +131,37 @@ export class AutoKafkaProducer<TEvent, TValue, TKey> implements OnModuleInit, On
 
       const verboseLog = this.verboseLoggingEnabled();
 
-      this.logger[verboseLog ? 'log' : 'debug'](
-        'Published ${batchMessages} messages to Kafka topic ${topicName}',
-        verboseLog ? JSON.stringify(params.messages) : '{omitted}',
-        this.options.topicName,
-      );
+      this.logger
+        .createScope({
+          messages: !this.options.verboseBeginning
+            ? '-'
+            : verboseLog
+            ? JSON.stringify(params.messages)
+            : `messages are only logged for the first ${MAX_VERBOSE_LOG_COUNT} batches`,
+        })
+        [verboseLog ? 'log' : 'debug'](
+          'Published ${messageCount} messages to Kafka topic ${topicName}: ${successCount} succeeded, ${failCount} failed',
+          params.messages.length,
+          this.options.topicName,
+          params.messages.length,
+          0,
+        );
 
       this.countVerboseLogging();
     } catch (error) {
-      this.logger.error('Failed to publish messages to Kafka topic ${topicName}', error, this.options.topicName);
+      this.logger.error(
+        'Failed to publish ${messageCount} messages to Kafka topic ${topicName}',
+        error,
+        params.messages.length,
+        this.options.topicName,
+      );
     }
   }
 
   onModuleInit() {
     this.logger.log(
-      'Starting message batcher with interval ${maxBatchIntervalMs}ms...',
+      'Starting message batcher with batchSize = ${batchSize} and maxBatchIntervalMs = ${maxBatchIntervalMs}ms...',
+      this.options.batchSize,
       this.options.maxBatchIntervalMs,
     );
 

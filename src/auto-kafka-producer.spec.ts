@@ -175,9 +175,10 @@ describe('AutoKafkaProducer', () => {
       // Assert
       expect(producer.send).toHaveBeenCalledTimes(1);
       expect(logErrorSpy).toHaveBeenCalledWith(
-        'Failed to publish messages to Kafka topic ${topicName}',
+        'Failed to publish ${messageCount} messages to Kafka topic ${topicName}',
         error,
-        options.topicName,
+        2,
+        'test-topic',
       );
     });
   });
