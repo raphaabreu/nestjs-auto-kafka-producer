@@ -47,6 +47,7 @@ export class AutoKafkaProducer<TEvent, TValue, TKey> implements OnModuleInit, On
   private readonly promiseCollector = new PromiseCollector();
   private readonly options: AutoKafkaProducerOptions<TEvent, TValue, TKey>;
   private readonly producer: Producer;
+  private connectionPromise: Promise<void>;
 
   private verboseLogCount = 0;
 
@@ -62,11 +63,7 @@ export class AutoKafkaProducer<TEvent, TValue, TKey> implements OnModuleInit, On
     return `${AutoKafkaProducer.name}:${eventName}`;
   }
 
-  constructor(
-    private readonly kafka: Kafka,
-    eventEmitter: EventEmitter2,
-    options: AutoKafkaProducerOptions<TEvent, TValue, TKey>,
-  ) {
+  constructor(kafka: Kafka, eventEmitter: EventEmitter2, options: AutoKafkaProducerOptions<TEvent, TValue, TKey>) {
     this.options = { ...defaultOptions, ...options };
 
     this.logger = new StructuredLogger(AutoKafkaProducer.getServiceName(this.options.eventName));
@@ -120,6 +117,8 @@ export class AutoKafkaProducer<TEvent, TValue, TKey> implements OnModuleInit, On
       compression: this.options.compression,
     };
 
+    await this.connectionPromise;
+
     try {
       await this.producer.send(params);
 
@@ -144,8 +143,9 @@ export class AutoKafkaProducer<TEvent, TValue, TKey> implements OnModuleInit, On
       this.countVerboseLogging();
     } catch (error) {
       this.logger.error(
-        'Failed to publish ${messageCount} messages to Kafka topic ${topicName}',
+        'Failed to publish ${messageCount} messages to Kafka topic ${topicName}: ${errorMessage}',
         error,
+        error.message,
         params.messages.length,
         this.options.topicName,
       );
@@ -161,7 +161,8 @@ export class AutoKafkaProducer<TEvent, TValue, TKey> implements OnModuleInit, On
 
     this.batcher.start(this.options.maxBatchIntervalMs);
 
-    this.producer.connect();
+    this.connectionPromise = this.producer.connect();
+    this.promiseCollector.add(this.connectionPromise);
   }
 
   async onModuleDestroy() {
@@ -169,6 +170,8 @@ export class AutoKafkaProducer<TEvent, TValue, TKey> implements OnModuleInit, On
 
     this.batcher.stop();
     await this.flush();
+
+    await this.producer.disconnect();
   }
 
   @OnEvent('flush')

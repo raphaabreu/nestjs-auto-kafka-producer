@@ -13,7 +13,8 @@ describe('AutoKafkaProducer', () => {
 
   beforeEach(async () => {
     producer = {
-      connect: jest.fn(),
+      connect: jest.fn().mockImplementation(() => Promise.resolve()),
+      disconnect: jest.fn(),
       send: jest.fn(),
     } as unknown as jest.Mocked<Producer>;
 
@@ -80,6 +81,7 @@ describe('AutoKafkaProducer', () => {
       // Arrange
       const batcherStopSpy = jest.spyOn(sut['batcher'], 'stop');
       const flushSpy = jest.spyOn(sut, 'flush');
+      const disconnectSpy = jest.spyOn(sut['producer'], 'disconnect');
 
       // Act
       await sut.onModuleDestroy();
@@ -87,6 +89,7 @@ describe('AutoKafkaProducer', () => {
       // Assert
       expect(batcherStopSpy).toHaveBeenCalledTimes(1);
       expect(flushSpy).toHaveBeenCalledTimes(1);
+      expect(disconnectSpy).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -175,8 +178,9 @@ describe('AutoKafkaProducer', () => {
       // Assert
       expect(producer.send).toHaveBeenCalledTimes(1);
       expect(logErrorSpy).toHaveBeenCalledWith(
-        'Failed to publish ${messageCount} messages to Kafka topic ${topicName}',
+        'Failed to publish ${messageCount} messages to Kafka topic ${topicName}: ${errorMessage}',
         error,
+        'Kafka error',
         2,
         'test-topic',
       );
