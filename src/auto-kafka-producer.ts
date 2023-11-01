@@ -6,6 +6,7 @@ import { StructuredLogger } from '@raphaabreu/nestjs-opensearch-structured-logge
 import { CompressionTypes, Kafka, Message, Producer } from 'kafkajs';
 
 export type AutoKafkaProducerOptions<TEvent, TValue, TKey> = {
+  name?: string;
   topicName: string;
   eventName: string;
   batchSize?: number;
@@ -26,13 +27,25 @@ export type AutoKafkaProducerOptions<TEvent, TValue, TKey> = {
   compression?: CompressionTypes;
 };
 
+export function defaultSerializer(value: any): string {
+  if (value === null) {
+    return 'null';
+  } else if (value === undefined) {
+    return 'undefined';
+  } else if (typeof value !== 'object') {
+    return value.toString();
+  } else {
+    return JSON.stringify(value);
+  }
+}
+
 const defaultOptions: Partial<AutoKafkaProducerOptions<any, any, any>> = {
   batchSize: 1000,
   maxBatchIntervalMs: 10000,
   keyExtractor: () => null,
   valueExtractor: (e) => e,
-  keySerializer: JSON.stringify,
-  valueSerializer: JSON.stringify,
+  keySerializer: defaultSerializer,
+  valueSerializer: defaultSerializer,
   verboseBeginning: true,
 
   sample: 1,
@@ -53,20 +66,20 @@ export class AutoKafkaProducer<TEvent, TValue, TKey> implements OnModuleInit, On
 
   public static register<TEvent, TValue, TKey>(options: AutoKafkaProducerOptions<TEvent, TValue, TKey>): Provider {
     return {
-      provide: AutoKafkaProducer.getServiceName(options.eventName),
+      provide: AutoKafkaProducer.getServiceName(options.name || options.eventName),
       useFactory: (kafka: Kafka, eventEmitter: EventEmitter2) => new AutoKafkaProducer(kafka, eventEmitter, options),
       inject: [Kafka, EventEmitter2],
     };
   }
 
-  public static getServiceName(eventName: string): string {
-    return `${AutoKafkaProducer.name}:${eventName}`;
+  public static getServiceName(name: string): string {
+    return `${AutoKafkaProducer.name}:${name}`;
   }
 
   constructor(kafka: Kafka, eventEmitter: EventEmitter2, options: AutoKafkaProducerOptions<TEvent, TValue, TKey>) {
     this.options = { ...defaultOptions, ...options };
 
-    this.logger = new StructuredLogger(AutoKafkaProducer.getServiceName(this.options.eventName));
+    this.logger = new StructuredLogger(AutoKafkaProducer.getServiceName(this.options.name || this.options.eventName));
 
     this.batcher = new MessageBatcher(
       this.options.batchSize,

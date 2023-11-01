@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CompressionTypes, Kafka, Producer } from 'kafkajs';
-import { AutoKafkaProducer, AutoKafkaProducerOptions } from './auto-kafka-producer';
+import { AutoKafkaProducer, AutoKafkaProducerOptions, defaultSerializer } from './auto-kafka-producer';
 
 describe('AutoKafkaProducer', () => {
   let sut: AutoKafkaProducer<any, any, any>;
@@ -57,6 +57,48 @@ describe('AutoKafkaProducer', () => {
 
   it('should be defined', () => {
     expect(sut).toBeDefined();
+  });
+
+  describe('defaultSerializer', () => {
+    describe('Primitive values', () => {
+      it.each([
+        [5, '5'],
+        ['hello', 'hello'],
+        [true, 'true'],
+        [null, 'null'],
+        [undefined, 'undefined'],
+      ])('should return string representation of %p', (input, expected) => {
+        // Act
+        const result = defaultSerializer(input);
+
+        // Assert
+        expect(result).toBe(expected);
+      });
+    });
+
+    describe('Non-primitive values', () => {
+      it.each([
+        [{ a: 1, b: 2 }, '{"a":1,"b":2}'],
+        [[1, 2, 3], '[1,2,3]'],
+      ])('should return JSON stringified representation of %p', (input, expected) => {
+        // Act
+        const result = defaultSerializer(input);
+
+        // Assert
+        expect(result).toBe(expected);
+      });
+    });
+  });
+
+  describe('getServiceName', () => {
+    it('should return service name from event', () => {
+      // Arrange
+      // Act
+      const name = AutoKafkaProducer.getServiceName('MyEvent');
+
+      // Assert
+      expect(name).toBe('AutoKafkaProducer:MyEvent');
+    });
   });
 
   describe('onModuleInit', () => {
