@@ -222,9 +222,9 @@ describe('AutoKafkaProducer', () => {
       expect(logErrorSpy).toHaveBeenCalledWith(
         'Failed to publish ${messageCount} messages to Kafka topic ${topicName}: ${errorMessage}',
         error,
-        'Kafka error',
         2,
         'test-topic',
+        'Kafka error',
       );
     });
   });

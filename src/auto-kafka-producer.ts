@@ -158,9 +158,9 @@ export class AutoKafkaProducer<TEvent, TValue, TKey> implements OnModuleInit, On
       this.logger.error(
         'Failed to publish ${messageCount} messages to Kafka topic ${topicName}: ${errorMessage}',
         error,
-        error.message,
         params.messages.length,
         this.options.topicName,
+        error.message,
       );
     }
   }
