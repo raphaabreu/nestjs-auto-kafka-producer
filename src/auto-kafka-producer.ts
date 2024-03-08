@@ -78,6 +78,13 @@ export class AutoKafkaProducer<TEvent, TValue, TKey> implements OnModuleInit, On
 
   constructor(kafka: Kafka, eventEmitter: EventEmitter2, options: AutoKafkaProducerOptions<TEvent, TValue, TKey>) {
     this.options = { ...defaultOptions, ...options };
+    
+    if(this.options.eventName === undefined) {
+      throw new Error('eventName is required');
+    }
+    if(this.options.topicName === undefined) {
+      throw new Error('topicName is required');
+    }
 
     this.logger = new StructuredLogger(AutoKafkaProducer.getServiceName(this.options.name || this.options.eventName));
 
