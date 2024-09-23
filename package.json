@@ -1,6 +1,6 @@
 {
   "name": "@raphaabreu/nestjs-auto-kafka-producer",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "Utility that simplifies publishing messages to Kafka",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -43,11 +43,11 @@
   "peerDependencies": {
     "@nestjs/common": ">=9.0.0",
     "@nestjs/event-emitter": ">=1.3.0",
-    "@raphaabreu/nestjs-opensearch-structured-logger": "^0.2.7",
-    "kafkajs": "^2.2.4"
+    "@raphaabreu/nestjs-opensearch-structured-logger": ">=0.2.7",
+    "kafkajs": ">=2.2.4"
   },
   "dependencies": {
-    "@raphaabreu/message-batcher": "^1.0.0",
-    "@raphaabreu/promise-collector": "^1.0.0"
+    "@raphaabreu/message-batcher": ">=1.0.0",
+    "@raphaabreu/promise-collector": ">=1.0.0"
   }
 }
